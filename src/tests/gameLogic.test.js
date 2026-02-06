@@ -17,6 +17,10 @@ describe('gameLogic', () => {
       expect(getCharClass(0, 'b', target)).toBe('char-incorrect');
     });
 
+    it('returns char-correct for same char different case', () => {
+      expect(getCharClass(0, 'A', target)).toBe('char-correct');
+    });
+
     it('returns empty string for index out of bounds', () => {
       expect(getCharClass(3, 'abc', target)).toBe('');
     });
@@ -25,6 +29,11 @@ describe('gameLogic', () => {
   describe('isSentenceComplete', () => {
     it('returns true when input matches target', () => {
       expect(isSentenceComplete('hello', 'hello')).toBe(true);
+    });
+
+    it('returns true when input matches target case-insensitively', () => {
+      expect(isSentenceComplete('Hello', 'hello')).toBe(true);
+      expect(isSentenceComplete('HELLO', 'hello')).toBe(true);
     });
 
     it('returns false when input does not match target', () => {

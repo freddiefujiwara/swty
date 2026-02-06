@@ -6,7 +6,7 @@ A simple and clean English typing practice application built with Vue 3.
 
 ## Features
 
-- **Practice with Real Sentences**: Fetches 100 simple English sentences via a Google Apps Script API.
+- **Practice with Real Sentences**: Fetches 10 simple English sentences via a Google Apps Script API.
 - **Immediate Feedback**: Highlights correct and incorrect characters as you type.
 - **Progress Tracking**: Visual progress bar showing your advancement through the sentence set.
 - **Clean UI**: Minimalist design focused on the typing experience.
