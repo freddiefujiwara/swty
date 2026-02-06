@@ -1,5 +1,7 @@
 # English Typing App
 
+Demo: http://freddiefujiwara.com/swty/
+
 A simple and clean English typing practice application built with Vue 3.
 
 ## Features
