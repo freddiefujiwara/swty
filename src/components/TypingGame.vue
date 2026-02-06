@@ -23,7 +23,9 @@ const fetchSentences = async () => {
     if (!response.ok) throw new Error('Failed to fetch sentences');
     const data = await response.json();
     if (data.answer) {
-      sentences.value = parseCSV(data.answer).slice(0, 10);
+      sentences.value = parseCSV(data.answer)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10);
     } else {
       throw new Error('Invalid API response');
     }
