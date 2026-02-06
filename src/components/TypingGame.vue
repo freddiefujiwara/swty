@@ -22,7 +22,7 @@ const fetchSentences = async () => {
     const response = await fetch(`${API_URL}?p=${encodeURIComponent(QUERY)}`);
     if (!response.ok) throw new Error('Failed to fetch sentences');
     const data = await response.json();
-    if (data.answer) {
+    if (data.answer !== undefined) {
       sentences.value = parseCSV(data.answer)
         .sort(() => Math.random() - 0.5)
         .slice(0, 10);
