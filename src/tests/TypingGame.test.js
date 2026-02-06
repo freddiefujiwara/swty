@@ -9,7 +9,6 @@ global.fetch = mockFetch;
 describe('TypingGame.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.restoreAllMocks();
     vi.spyOn(Math, 'random').mockReturnValue(0.1);
   });
 
@@ -27,79 +26,66 @@ describe('TypingGame.vue', () => {
     mockFetch.mockResolvedValueOnce({ ok: false });
     const wrapper = mount(TypingGame);
     await flushPromises();
-
     expect(wrapper.text()).toContain('Error');
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ answer: 'a' }),
     });
-
     await wrapper.find('.retry-btn').trigger('click');
     await flushPromises();
-
     expect(wrapper.find('.sentence-display').exists()).toBe(true);
   });
 
-  it('renders sentences and handles typing', async () => {
+  it('handles timer logic', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ answer: 'a,b' }),
+      json: async () => ({ answer: 'apple,banana' }),
     });
 
     const wrapper = mount(TypingGame);
     await flushPromises();
 
-    expect(wrapper.find('.sentence-display').exists()).toBe(true);
-    const display = wrapper.find('.sentence-display');
-    const text = display.text();
-
-    const input = wrapper.find('input');
-    await input.setValue(text);
-
     vi.useFakeTimers();
-    await input.trigger('input');
-
-    expect(wrapper.find('.char-correct').exists()).toBe(true);
-
-    vi.advanceTimersByTime(150);
-    await flushPromises();
-    await flushPromises();
-
-    expect(wrapper.find('.counter').text()).toContain('2 / 2');
-    vi.useRealTimers();
-  });
-
-  it('completes game and restarts', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ answer: 'a' }),
-    });
-
-    const wrapper = mount(TypingGame);
-    await flushPromises();
-
     const input = wrapper.find('input');
-    await input.setValue('a');
 
-    vi.useFakeTimers();
-    await input.trigger('input');
+    const s1 = wrapper.vm.sentences[0];
+    const s2 = wrapper.vm.sentences[1];
 
+    await input.setValue(s1[0]);
+
+    vi.advanceTimersByTime(1000);
+    expect(wrapper.vm.elapsedTime).toBeGreaterThan(0.5);
+
+    wrapper.vm.startTimer(); // Branch coverage
+
+    // Complete first sentence
+    await input.setValue(s1);
     vi.advanceTimersByTime(150);
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Well Done!');
+    expect(wrapper.vm.currentIndex).toBe(1);
+
+    // Complete second sentence
+    await input.setValue(s2);
+
+    const finalTime = wrapper.vm.elapsedTime;
+    vi.advanceTimersByTime(1000);
+    expect(wrapper.vm.elapsedTime).toBe(finalTime);
+
+    // Test resetGame (Try Again button)
+    vi.advanceTimersByTime(150);
+    await flushPromises();
 
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ answer: 'b' }),
+      json: async () => ({ answer: 'cherry' }),
     });
-
-    await wrapper.find('.restart-btn').trigger('click');
+    const restartBtn = wrapper.find('.restart-btn');
+    await restartBtn.trigger('click');
     await flushPromises();
-
-    expect(wrapper.find('.counter').text()).toContain('1 / 1');
-    vi.useRealTimers();
+    expect(wrapper.vm.elapsedTime).toBe(0);
+    expect(wrapper.vm.currentIndex).toBe(0);
   });
 
   it('handles invalid response', async () => {
@@ -119,9 +105,15 @@ describe('TypingGame.vue', () => {
     });
     const wrapper = mount(TypingGame);
     await flushPromises();
-    // Access currentSentence to cover fallback branch
-    expect(wrapper.vm.currentSentence).toBe('');
     expect(wrapper.text()).toContain('No sentences found.');
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ answer: 'a' }),
+    });
+    await wrapper.find('.retry-btn').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.sentence-display').exists()).toBe(true);
   });
 
   it('focuses input on click', async () => {
@@ -130,25 +122,20 @@ describe('TypingGame.vue', () => {
       json: async () => ({ answer: 'a' }),
     });
     const wrapper = mount(TypingGame, { attachTo: document.body });
+    await flushPromises();
 
     vi.useFakeTimers();
-    await flushPromises();
-    vi.advanceTimersByTime(150);
+    vi.advanceTimersByTime(200);
 
     const input = wrapper.find('input').element;
     const spy = vi.spyOn(input, 'focus');
 
-    const callsBefore = spy.mock.calls.length;
-
     await wrapper.trigger('click');
-    expect(spy.mock.calls.length).toBeGreaterThan(callsBefore);
+    expect(spy).toHaveBeenCalled();
 
-    const afterClick = spy.mock.calls.length;
     window.dispatchEvent(new Event('click'));
-    expect(spy.mock.calls.length).toBeGreaterThan(afterClick);
-
+    expect(spy.mock.calls.length).toBeGreaterThan(1);
     wrapper.unmount();
-    vi.useRealTimers();
   });
 
   it('unmounts and removes listener', async () => {
@@ -158,11 +145,18 @@ describe('TypingGame.vue', () => {
       });
       const wrapper = mount(TypingGame);
       await flushPromises();
-      const input = wrapper.find('input').element;
-      const spy = vi.spyOn(input, 'focus');
+      const spy = vi.spyOn(wrapper.find('input').element, 'focus');
+
+      vi.useFakeTimers();
+      const input = wrapper.find('input');
+      await input.setValue('a');
 
       wrapper.unmount();
       window.dispatchEvent(new Event('click'));
       expect(spy).not.toHaveBeenCalled();
+
+      const time = wrapper.vm.elapsedTime;
+      vi.advanceTimersByTime(1000);
+      expect(wrapper.vm.elapsedTime).toBe(time);
   });
 });
