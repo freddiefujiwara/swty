@@ -10,7 +10,7 @@ export function getCharClass(index, userInput, targetSentence) {
   if (index >= targetSentence.length) return '';
 
   if (index < userInput.length) {
-    return userInput[index] === targetSentence[index]
+    return userInput[index].toLowerCase() === targetSentence[index].toLowerCase()
       ? 'char-correct'
       : 'char-incorrect';
   }
@@ -25,5 +25,5 @@ export function getCharClass(index, userInput, targetSentence) {
  * @returns {boolean}
  */
 export function isSentenceComplete(userInput, targetSentence) {
-  return userInput === targetSentence && targetSentence.length > 0;
+  return userInput.toLowerCase() === targetSentence.toLowerCase() && targetSentence.length > 0;
 }

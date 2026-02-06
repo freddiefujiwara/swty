@@ -50,8 +50,8 @@ jobs:
 
       - name: Generate OGP Image from GAS JSON
         run: |
-          # URL-encoded title: Markdown to Image tool for SNS posting -> Markdown%20to%20Image%20tool%20for%20SNS%20posting
-          JSON_RESPONSE=$(curl -L -s "https://script.google.com/macros/s/AKfycbzbMAKxkzHlwN8SY7ygJA34xYESMNNdkGNt8vv1XMcZSksgHsUwOxCCdP-wgg6fv7M/exec?t=Markdown%20to%20Image%20tool%20for%20SNS%20posting")
+          # URL-encoded title: English Typing App -> English%20Typing%20App
+          JSON_RESPONSE=$(curl -L -s "https://script.google.com/macros/s/AKfycbzbMAKxkzHlwN8SY7ygJA34xYESMNNdkGNt8vv1XMcZSksgHsUwOxCCdP-wgg6fv7M/exec?t=English%20Typing%20App")
           echo $JSON_RESPONSE | jq -r '.png' | base64 -d > ./dist/ogp.png
           ls -lh ./dist/ogp.png
 

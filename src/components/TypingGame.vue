@@ -12,8 +12,25 @@ const userInput = ref('');
 const loading = ref(true);
 const error = ref(null);
 const typingInput = ref(null);
+const elapsedTime = ref(0);
+const timerInterval = ref(null);
 
 const currentSentence = computed(() => sentences.value[currentIndex.value] || '');
+
+const startTimer = () => {
+  if (!timerInterval.value) {
+    timerInterval.value = setInterval(() => {
+      elapsedTime.value += 0.1;
+    }, 100);
+  }
+};
+
+const stopTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+    timerInterval.value = null;
+  }
+};
 
 const fetchSentences = async () => {
   loading.value = true;
@@ -22,8 +39,10 @@ const fetchSentences = async () => {
     const response = await fetch(`${API_URL}?p=${encodeURIComponent(QUERY)}`);
     if (!response.ok) throw new Error('Failed to fetch sentences');
     const data = await response.json();
-    if (data.answer) {
-      sentences.value = parseCSV(data.answer);
+    if (data.answer !== undefined) {
+      sentences.value = parseCSV(data.answer)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10);
     } else {
       throw new Error('Invalid API response');
     }
@@ -36,7 +55,14 @@ const fetchSentences = async () => {
 };
 
 const handleInput = () => {
+  if (userInput.value.length > 0) {
+    startTimer();
+  }
+
   if (isSentenceComplete(userInput.value, currentSentence.value)) {
+    if (currentIndex.value === sentences.value.length - 1) {
+      stopTimer();
+    }
     // Correctly typed the whole sentence
     // We move to next sentence immediately but wait a bit for visual feedback
     // To avoid losing input for the next sentence, we can clear userInput
@@ -55,6 +81,8 @@ const getCharClass = (index) => {
 const resetGame = () => {
   currentIndex.value = 0;
   userInput.value = '';
+  elapsedTime.value = 0;
+  stopTimer();
   fetchSentences();
 };
 
@@ -71,6 +99,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('click', focusInput);
+  stopTimer();
 });
 
 watch(loading, (newVal) => {
@@ -78,6 +107,8 @@ watch(loading, (newVal) => {
     setTimeout(focusInput, 100);
   }
 });
+
+defineExpose({ fetchSentences, handleInput, resetGame, startTimer, stopTimer, sentences, currentIndex, elapsedTime });
 </script>
 
 <template>
@@ -96,7 +127,10 @@ watch(loading, (newVal) => {
       <div class="progress-bar">
         <div class="progress-inner" :style="{ width: `${(currentIndex / sentences.length) * 100}%` }"></div>
       </div>
-      <div class="counter">{{ currentIndex + 1 }} / {{ sentences.length }}</div>
+      <div class="counter">
+        <span>{{ currentIndex + 1 }} / {{ sentences.length }}</span>
+        <span class="timer-display">{{ elapsedTime.toFixed(1) }}s</span>
+      </div>
 
       <div class="sentence-display">
         <span
@@ -124,7 +158,7 @@ watch(loading, (newVal) => {
     <div v-else-if="sentences.length > 0" class="game-complete">
       <div class="success-icon">🎉</div>
       <h2>Well Done!</h2>
-      <p>You've completed all {{ sentences.length }} sentences.</p>
+      <p>You've completed all {{ sentences.length }} sentences in {{ elapsedTime.toFixed(1) }} seconds.</p>
       <button @click="resetGame" class="restart-btn">Try Again</button>
     </div>
 
@@ -192,6 +226,13 @@ watch(loading, (newVal) => {
   font-size: 0.9rem;
   color: #666;
   margin-bottom: 2rem;
+  display: flex;
+  gap: 2rem;
+}
+
+.timer-display {
+  font-family: monospace;
+  font-weight: 500;
 }
 
 .sentence-display {
